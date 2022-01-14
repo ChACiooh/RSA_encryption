@@ -1,0 +1,9 @@
+1. 중간까지 복호화가 안 되고 뒷문장이 복호화된 건 : byte코드와 문자열 번역 미스
+2. plain[0:-ord(plain[-1])] 오류 : plain[-1]은 마지막에 있는 elem이고 ord는 그 elem을 아스키 코드값으로 반환하는 함수인데, 저장된 값이 숫자라서 그 숫자에 해당되는 아스키 코드값은 out of range를 일으킨다. ord를 제거하여 사라졌다.
+3. 한글 입력시 오류가 나타났다. key값으로는 한글, 영어 모두 가능했으나 plain text로서는 불가능했다. 이유인 즉슨 바이트 블록을 맞추기 위한 계산에서 한글은 유니코드 상으로 2byte씩 계산해야 하지만, 코드에서는 element의 수를 len으로 반환하였기 때문에 실제 바이트 수와 상이했다.
+3-1. key value는 encode되어 byte로만 연산하므로 어떠한 문자열이 들어와도 상관없다.
+3-2. plain text의 글자수를 계산할 때, encode한 byte string의 글자 수를 따지게 하여, 한글 입력시에도 성공적으로 암호화/복호화할 수 있었다.
+4. 처음에는 key값을 그냥 단순히 byte code로 변환하여 사용하였으나, 보안 매커니즘을 위해 hash function을 쓰는 것을 깨닫고 hashlib.sha256()을 이용하였다. 이는 블록 체인 기술에서 가장 널리 쓰인다고 하며 관련 예제들도 어렵지 않게 조사하여 사용할 수 있었다. (wiki.hash.kr/index.php/SHA256 참조)
+5. RSA에서 encrypt(self, plaintext, K)라는 메소드가 있는데, 이 K값은 byte string 또는 long 타입이어야 한다. 하지만 오직 호환성을 위한 랜덤 매개변수이며 값은 무시될 수 있다고 spec에 적혀 있다. (https://pythonhosted.org/pycrypto/Crypto.PublicKey.RSA._RSAobj-class.html)
+6. AES 실행 시 key의 size는 32bytes를 넘어서는 안 된다. UTF-8에서 한글 한 글자는 2bytes씩 인식하므로 이 점에 유념도록 한다.
+7. RSA에서 내부 API함수 중 time과 관련하여 python3.7x부터는 지원이 안 된다고 한다. 그 결과 time.clock 대신 time.process_time을 사용하기 위해 함수에 직접 대입하였다.
